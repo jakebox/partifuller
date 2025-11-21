@@ -1,2 +1,5 @@
 /target
 .direnv
+partifuller.db
+partifuller.db-shm
+partifuller.db-wal
