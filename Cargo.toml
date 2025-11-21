@@ -4,3 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+askama = "0.14.0"
+axum = "0.8.7"
+sqlx = { version = "0.8.6", features = ["macros", "runtime-tokio", "sqlite"] }
