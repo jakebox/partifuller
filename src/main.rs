@@ -1,30 +1,37 @@
-use axum::{
-    routing::get,
-    Router,
-    response::{Html, IntoResponse},
-    http::StatusCode,
-};
-
+use axum::{Router, http::StatusCode, response::Html, routing::get};
 use askama::Template;
 
 #[derive(Template)]
 #[template(
     ext = "html",
-    source = "<p>© {{ year }} {{ enterprise|upper }}</p>"
+    source = r#"
+{% extends "base.html" %}
+{% block content %}
+<ul>
+{% for rsvp in rsvps %}
+  <li>{{ rsvp.name }}</li>
+{% endfor %}
+</ul>
+{% endblock %}
+"#
 )]
-struct Footer<'a> {
-    year: u16,
-    enterprise: &'a str,
+struct Home {
+    rsvps: Vec<Rsvp>,
+}
+
+struct Rsvp {
+    name: String,
 }
 
 async fn index() -> Result<Html<String>, StatusCode> {
-    let footer = Footer {
-        year: 2024,
-        enterprise: "My Company",
-    }
-    .render()
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR))?;
-    Ok(Html(footer))
+    let mut rsvps = Vec::new();
+    rsvps.push(Rsvp {
+        name: "Roland".to_string(),
+    });
+    let page = Home { rsvps }
+        .render()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Html(page))
 }
 
 #[tokio::main]
