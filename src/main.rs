@@ -1,10 +1,16 @@
 use axum::{
-    Form, Router, extract::State, http::StatusCode, response::Html, routing::{get, post}
+    extract::State,
+    http::StatusCode,
+    response::Html,
+    routing::{get, post},
+    Form, Router,
 };
-
 use askama::Template;
 use sqlx::sqlite::SqlitePool;
 
+////////////////////
+// HTML templates //
+////////////////////
 #[derive(Template)]
 #[template(
     ext = "html",
@@ -27,6 +33,10 @@ struct RsvpList {
     rsvps: Vec<Rsvp>,
 }
 
+/////////////
+// Structs //
+/////////////
+
 #[derive(sqlx::FromRow)]
 struct Rsvp {
     id: i64,
@@ -42,6 +52,10 @@ struct RsvpNew {
     email: String,
     attending: i64,
 }
+
+////////////
+// Routes //
+////////////
 
 async fn index(State(pool): State<SqlitePool>) -> Result<Html<String>, StatusCode> {
     let rsvps = sqlx::query_as("SELECT * from rsvps")
@@ -60,23 +74,34 @@ async fn add_rsvp(
     State(pool): State<SqlitePool>,
     Form(rsvp): Form<RsvpNew>,
 ) -> Result<Html<String>, (StatusCode, String)> {
+    // Validate input
+    if rsvp.name.trim().is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "Name is required".to_string()));
+    }
+    if rsvp.email.trim().is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "Email is required".to_string()));
+    }
+    if rsvp.attending < 0 {
+        return Err((StatusCode::BAD_REQUEST, "Attending must be a positive number".to_string()));
+    }
+
     let _result =
         sqlx::query("INSERT INTO rsvps (name, email, attending) VALUES (?, ?, ?) RETURNING *")
-            .bind(rsvp.name)
-            .bind(rsvp.email)
+            .bind(rsvp.name.trim())
+            .bind(rsvp.email.trim())
             .bind(rsvp.attending)
             .fetch_one(&pool)
             .await
-            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Not good".to_string()))?;
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Your name and email must be unique!".to_string()))?;
 
     let rsvps = sqlx::query_as("SELECT * from rsvps")
         .fetch_all(&pool)
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "EE".to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to load RSVPs: {}", e)))?;
 
     let rsvp_html = RsvpList { rsvps }
         .render()
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "EE".to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to render page: {}", e)))?;
 
     Ok(Html(rsvp_html))
 }
