@@ -3,10 +3,12 @@
   <head>
     <meta charset="utf-8">
     <title>Beer Belly Launch Party</title>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
   </head>
   <body>
     <main>
        {% block content %}{% endblock %}
+       {% include "rsvp_form.html" %}
     </main>
   </body>
 </html>

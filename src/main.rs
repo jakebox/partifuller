@@ -1,9 +1,5 @@
 use axum::{
-    Json, Router,
-    extract::State,
-    http::StatusCode,
-    response::Html,
-    routing::{get, post},
+    Form, Router, extract::State, http::StatusCode, response::Html, routing::{get, post}
 };
 
 use askama::Template;
@@ -15,11 +11,13 @@ use sqlx::sqlite::SqlitePool;
     source = r#"
 {% extends "base.html" %}
 {% block content %}
+<div id="rsvp-result">
 <ul>
 {% for rsvp in rsvps %}
   <li>{{ rsvp.name }}</li>
 {% endfor %}
 </ul>
+</div>
 {% endblock %}
 "#
 )]
@@ -59,7 +57,7 @@ struct RsvpNew {
 }
 
 async fn index(State(pool): State<SqlitePool>) -> Result<Html<String>, StatusCode> {
-    let rsvps = sqlx::query_as("SELECT name from rsvps")
+    let rsvps = sqlx::query_as("SELECT * from rsvps")
         .fetch_all(&pool)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -73,7 +71,7 @@ async fn index(State(pool): State<SqlitePool>) -> Result<Html<String>, StatusCod
 
 async fn add_rsvp(
     State(pool): State<SqlitePool>,
-    Json(rsvp): Json<RsvpNew>,
+    Form(rsvp): Form<RsvpNew>,
 ) -> Result<Html<String>, StatusCode> {
     let _result =
         sqlx::query("INSERT INTO rsvps (name, email, attending) VALUES (?, ?, ?) RETURNING *")
@@ -84,7 +82,7 @@ async fn add_rsvp(
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let rsvps = sqlx::query_as("SELECT name from rsvps")
+    let rsvps = sqlx::query_as("SELECT * from rsvps")
         .fetch_all(&pool)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -107,8 +105,10 @@ async fn main() -> Result<(), sqlx::Error> {
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3500").await.unwrap();
     axum::serve(listener, app).await.unwrap();
+
+    println!("FAIL");
 
     Ok(())
 }
