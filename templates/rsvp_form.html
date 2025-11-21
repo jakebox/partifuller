@@ -1,4 +1,7 @@
-<form hx-post="/rsvp" hx-target="#rsvp-result" hx-swap="outerHTML">
+<form hx-post="/rsvp"
+      hx-target="#rsvp-result"
+      hx-target-error="#rsvp-error"
+      hx-swap="innerHTML">
   <label>
     Name
     <input name="name" required />
@@ -17,3 +20,5 @@
   <button type="submit">Submit</button>
 </form>
 
+<div id="rsvp-error" style="color: red;">
+</div>

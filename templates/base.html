@@ -4,8 +4,9 @@
     <meta charset="utf-8">
     <title>Beer Belly Launch Party</title>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <script src=" https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4/dist/response-targets.min.js "></script>
   </head>
-  <body>
+  <body hx-ext="response-targets">
     <main>
        {% block content %}{% endblock %}
        {% include "rsvp_form.html" %}

@@ -12,11 +12,7 @@ use sqlx::sqlite::SqlitePool;
 {% extends "base.html" %}
 {% block content %}
 <div id="rsvp-result">
-<ul>
-{% for rsvp in rsvps %}
-  <li>{{ rsvp.name }}</li>
-{% endfor %}
-</ul>
+{% include "rsvp_list.html" %}
 </div>
 {% endblock %}
 "#
@@ -26,16 +22,7 @@ struct Home {
 }
 
 #[derive(Template)]
-#[template(
-    ext = "html",
-    source = r#"
-<ul>
-{% for rsvp in rsvps %}
-  <li>{{ rsvp.name }}</li>
-{% endfor %}
-</ul>
-"#
-)]
+#[template(path="rsvp_list.html")]
 struct RsvpList {
     rsvps: Vec<Rsvp>,
 }
@@ -72,7 +59,7 @@ async fn index(State(pool): State<SqlitePool>) -> Result<Html<String>, StatusCod
 async fn add_rsvp(
     State(pool): State<SqlitePool>,
     Form(rsvp): Form<RsvpNew>,
-) -> Result<Html<String>, StatusCode> {
+) -> Result<Html<String>, (StatusCode, String)> {
     let _result =
         sqlx::query("INSERT INTO rsvps (name, email, attending) VALUES (?, ?, ?) RETURNING *")
             .bind(rsvp.name)
@@ -80,16 +67,16 @@ async fn add_rsvp(
             .bind(rsvp.attending)
             .fetch_one(&pool)
             .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Not good".to_string()))?;
 
     let rsvps = sqlx::query_as("SELECT * from rsvps")
         .fetch_all(&pool)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "EE".to_string()))?;
 
     let rsvp_html = RsvpList { rsvps }
         .render()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "EE".to_string()))?;
 
     Ok(Html(rsvp_html))
 }
