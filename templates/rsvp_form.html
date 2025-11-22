@@ -3,6 +3,14 @@
     margin-bottom: 12px;
     display: block;
   }
+
+  input, select, button {
+    font-size: 16px; 
+    padding: 0px;
+    background-color: transparent;
+    border: 1px solid black;
+    max-width: 100px;
+  }
 </style>
 
 <form hx-post="/rsvp"
@@ -21,15 +29,15 @@
   </label>
 
   <label class="form-item">
-    Attending 
-    <select name="attending" required>
-      <option value="">y/n</option>
+    Attending? 
+    <select style="border: none; font-family: serif;" name="attending" required>
+      <option value="">Select</option>
       <option value="yes">Yes</option>
       <option value="no">No</option>
     </select>
   </label>
 
-  <button type="submit">Submit</button>
+  <button style="color: black; font-family: serif; border: none;"type="submit">Submit</button>
 </form>
 
 <div id="rsvp-error" hx-swap-oob="true" style="color: red;"></div>
