@@ -6,7 +6,7 @@ use axum::{
     response::Html,
     routing::{get, post},
 };
-use sqlx::sqlite::SqlitePool;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use thiserror::Error;
 
 /////////////
@@ -148,7 +148,13 @@ async fn add_rsvp(
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
-    let pool = SqlitePool::connect("sqlite:./partifuller.db").await?;
+
+    let options = SqliteConnectOptions::new()
+        .create_if_missing(true)
+        .filename("./partifuller.db");
+
+    let pool = SqlitePool::connect_with(options).await?;
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
     let app = Router::new()
         .route("/", get(index))
