@@ -1,5 +1,5 @@
 {
-  description = "partifullar";
+  description = "partifuller";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -15,6 +15,8 @@
           pkgs = import nixpkgs {
             inherit system overlays;
           };
+
+          partifuller = import ./build.nix { inherit pkgs; };
         in
         {
           devShells.default = with pkgs; mkShell {
@@ -24,9 +26,11 @@
               rust-bin.stable.latest.default
               sqlite
               sqlx-cli
+
               rust-analyzer
             ];
           };
+          packages.default = partifuller;
         }
       );
 }
