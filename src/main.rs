@@ -4,9 +4,10 @@ use axum::{
     extract::State,
     http::StatusCode,
     response::Html,
-    routing::{get, post},
+    routing::{get, get_service, post},
 };
 use sqlx::sqlite::SqlitePool;
+use tower_http::services::ServeDir;
 
 ////////////////////
 // HTML templates //
@@ -17,6 +18,7 @@ use sqlx::sqlite::SqlitePool;
     source = r#"
 {% extends "base.html" %}
 {% block content %}
+{% include "rsvp_form.html" %}
 <div id="rsvp-result">
 {% include "rsvp_list.html" %}
 </div>
@@ -122,7 +124,9 @@ async fn main() -> Result<(), sqlx::Error> {
     let app = Router::new()
         .route("/", get(index))
         .route("/rsvp", post(add_rsvp))
+        .nest_service("/static", get_service(ServeDir::new("./static")))
         .with_state(pool);
+
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();

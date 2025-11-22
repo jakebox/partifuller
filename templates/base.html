@@ -3,13 +3,56 @@
   <head>
     <meta charset="utf-8">
     <title>Beer Belly Launch Party</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        text-align: center;
+      }
+
+      main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .beer {
+        color: #000;
+        font-family: monospace;
+        font-size: 3px;
+        display: inline-block;
+        margin-top: -50px;
+      }
+      h1 {
+        margin-bottom: 0; /* Remove default top/bottom margin */
+      }
+
+      #ascii {
+        white-space: pre;
+      }
+    </style>
+    
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
     <script src=" https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4/dist/response-targets.min.js "></script>
+    <script src="static/frames.js"></script>
+    <script>
+      // frames[] is loaded from frames.js
+      let i = 0;
+
+      function animate() {
+        document.getElementById("ascii").textContent = frames[i];
+        i = (i + 1) % frames.length;
+      }
+
+      setInterval(animate, 80);
+      animate();
+    </script>
   </head>
   <body hx-ext="response-targets">
     <main>
+       <h1>Beerbelly Launch Party</h1>
+       <div class="beer" id="ascii">Loading…</div>
        {% block content %}{% endblock %}
-       {% include "rsvp_form.html" %}
     </main>
   </body>
 </html>
