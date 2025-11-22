@@ -28,6 +28,7 @@ struct RsvpList {
 // Structs //
 /////////////
 
+#[allow(dead_code)]
 #[derive(sqlx::FromRow)]
 struct Rsvp {
     id: i64,
@@ -42,6 +43,51 @@ struct RsvpNew {
     name: String,
     email: String,
     attending: String,
+}
+
+async fn db_add_rsvp(pool: &SqlitePool, rsvp: RsvpNew) -> Result<(), (StatusCode, String)> {
+    let attending = match rsvp.attending.as_str() {
+        "yes" => 1,
+        "no" => 0,
+        _ => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid attending code".to_string(),
+            ));
+        }
+    };
+
+    let _result = sqlx::query_as!(
+        Rsvp,
+        "INSERT INTO rsvps (name, email, attending) VALUES (?, ?, ?) RETURNING *",
+        rsvp.name,
+        rsvp.email,
+        attending
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            "Your name and email must be unique!".to_string(),
+        )
+    })?;
+
+    Ok(())
+}
+
+async fn get_rsvps(pool: &SqlitePool) -> Result<Vec<Rsvp>, (StatusCode, String)> {
+    let rsvps = sqlx::query_as!(Rsvp, "SELECT * from rsvps")
+        .fetch_all(pool)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to load RSVPs: {e}"),
+            )
+        })?;
+
+    Ok(rsvps)
 }
 
 ////////////
@@ -65,41 +111,14 @@ async fn add_rsvp(
     State(pool): State<SqlitePool>,
     Form(rsvp): Form<RsvpNew>,
 ) -> Result<Html<String>, (StatusCode, String)> {
+    db_add_rsvp(&pool, rsvp).await?;
 
-    let attending = match rsvp.attending.as_str() {
-        "yes" => 1,
-        "no" => 0,
-        _ => return Err((StatusCode::BAD_REQUEST, "FAIL".to_string())),
-    };
-
-    let _result =
-        sqlx::query("INSERT INTO rsvps (name, email, attending) VALUES (?, ?, ?) RETURNING *")
-            .bind(rsvp.name.trim())
-            .bind(rsvp.email.trim())
-            .bind(attending)
-            .fetch_one(&pool)
-            .await
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Your name and email must be unique!".to_string(),
-                )
-            })?;
-
-    let rsvps = sqlx::query_as("SELECT * from rsvps")
-        .fetch_all(&pool)
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to load RSVPs: {}", e),
-            )
-        })?;
+    let rsvps = get_rsvps(&pool).await?;
 
     let rsvp_html = RsvpList { rsvps }.render().map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to render page: {}", e),
+            format!("Failed to load RSVPs: {e}"),
         )
     })?;
 
@@ -115,7 +134,6 @@ async fn main() -> Result<(), sqlx::Error> {
         .route("/rsvp", post(add_rsvp))
         .nest_service("/static", get_service(ServeDir::new("./static")))
         .with_state(pool);
-
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
