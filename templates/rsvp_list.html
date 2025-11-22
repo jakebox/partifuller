@@ -6,8 +6,9 @@
   }
 
   h3 {
-    font-weight: 500;
-    margin-top: 0;
+    font-weight: 800;
+    margin-top: 20px;
+    margin-bottom: 10px;
   }
 
   ul {
@@ -17,12 +18,11 @@
   }
 </style>
 
-<h2>Guests</h2>
-
-<div style="display: flex; gap: 40px;">
+<div id="rsvp-error" hx-swap-oob="true"></div>
+<div id="rsvp-result" style="display: flex; gap: 40px;">
   <!-- Attending -->
   <div>
-    <h3>Yes!</h3>
+    <h3>Attending</h3>
     <ul>
     {% for rsvp in rsvps %}
       {% if rsvp.attending == 1 %}
@@ -34,7 +34,7 @@
 
   <!-- Not Attending -->
   <div>
-    <h3>No!</h3>
+    <h3>Not Attending</h3>
     <ul>
     {% for rsvp in rsvps %}
       {% if rsvp.attending == 0 %}

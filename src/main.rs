@@ -92,7 +92,7 @@ async fn db_add_rsvp(pool: &SqlitePool, rsvp: RsvpNew) -> Result<(), AppError> {
         attending
     )
     .fetch_one(pool)
-    .await?
+    .await
     .map_err(|e| match e {
         sqlx::Error::Database(_) => AppError::DuplicateRsvp,
         _ => AppError::Database(e),
