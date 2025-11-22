@@ -4,10 +4,9 @@ use axum::{
     extract::State,
     http::StatusCode,
     response::Html,
-    routing::{get, get_service, post},
+    routing::{get, post},
 };
 use sqlx::sqlite::SqlitePool;
-use tower_http::services::ServeDir;
 use thiserror::Error;
 
 /////////////
@@ -77,6 +76,10 @@ struct RsvpNew {
     attending: String,
 }
 
+//////////////
+// Database //
+//////////////
+
 async fn db_add_rsvp(pool: &SqlitePool, rsvp: RsvpNew) -> Result<(), AppError> {
     let attending = match rsvp.attending.as_str() {
         "yes" => 1,
@@ -109,6 +112,20 @@ async fn get_rsvps(pool: &SqlitePool) -> Result<Vec<Rsvp>, AppError> {
     Ok(rsvps)
 }
 
+/////////////////////
+// Include script  //
+/////////////////////
+
+const APP_SCRIPT: &str = include_str!("../static/frames.js");
+
+async fn frames_js_handler() -> impl axum::response::IntoResponse {
+    (
+        StatusCode::OK,
+        [(axum::http::header::CONTENT_TYPE, "text/javascript")],
+        APP_SCRIPT,
+    )
+}
+
 ////////////
 // Routes //
 ////////////
@@ -136,7 +153,7 @@ async fn main() -> Result<(), sqlx::Error> {
     let app = Router::new()
         .route("/", get(index))
         .route("/rsvp", post(add_rsvp))
-        .nest_service("/static", get_service(ServeDir::new("./static")))
+        .route("/static/frames.js", get(frames_js_handler))
         .with_state(pool);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
