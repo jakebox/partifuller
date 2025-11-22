@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="utf-8">
     <title>Beer Belly Launch Party</title>
     <style>
@@ -56,22 +57,10 @@
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
     <script src=" https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4/dist/response-targets.min.js "></script>
     <script src="static/frames.js"></script>
-    <script>
-      // frames[] is loaded from frames.js
-      let i = 0;
-
-      function animate() {
-        document.getElementById("ascii").textContent = frames[i];
-        i = (i + 1) % frames.length;
-      }
-
-      setInterval(animate, 80);
-      animate();
-    </script>
   </head>
   <body hx-ext="response-targets">
     <main>
-      <marquee scrollamount="5" >RSVP BELOW</marquee>
+      <marquee scrollamount="5" width="device-width">RSVP BELOW</marquee>
        <h1>Beerbelly Launch Party</h1>
        <div class="beer" id="ascii">Loading…</div>
        <h2>Join us for the launch of Beerbelly!</h2>
@@ -87,4 +76,13 @@
        </footer>
     </main>
   </body>
+  <script>
+    let i = 0;
+    function animate() {
+      document.getElementById("ascii").textContent = frames[i];
+      i = (i + 1) % frames.length;
+    }
+    setInterval(animate, 80);
+    animate();
+  </script>
 </html>
