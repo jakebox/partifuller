@@ -13,19 +13,8 @@ use tower_http::services::ServeDir;
 // HTML templates //
 ////////////////////
 #[derive(Template)]
-#[template(
-    ext = "html",
-    source = r#"
-{% extends "base.html" %}
-{% block content %}
-{% include "rsvp_form.html" %}
-<div id="rsvp-result">
-{% include "rsvp_list.html" %}
-</div>
-{% endblock %}
-"#
-)]
-struct Home {
+#[template(path = "index.html")]
+struct IndexPage {
     rsvps: Vec<Rsvp>,
 }
 
@@ -65,7 +54,7 @@ async fn index(State(pool): State<SqlitePool>) -> Result<Html<String>, StatusCod
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let page = Home { rsvps }
+    let page = IndexPage { rsvps }
         .render()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

@@ -1,28 +1,35 @@
+<style>
+  .form-item {
+    margin-bottom: 12px;
+    display: block;
+  }
+</style>
+
 <form hx-post="/rsvp"
       hx-target="#rsvp-result"
       hx-target-error="#rsvp-error"
       hx-swap="innerHTML">
-  <label>
-    Name
+
+  <label class="form-item">
+    Name 
     <input name="name" required />
   </label>
-  <br/>
-  <label>
-    Email
+
+  <label class="form-item">
+    Email 
     <input type="email" name="email" required />
   </label>
-  <br/>
-  <label>
-    Attending
+
+  <label class="form-item">
+    Attending 
     <select name="attending" required>
-    <option value="">Select</option>
-    <option value="yes">Yes</option>
-    <option value="no">No</option>
+      <option value="">y/n</option>
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
     </select>
   </label>
-  <br/>
+
   <button type="submit">Submit</button>
 </form>
 
-<div id="rsvp-error" style="color: red;">
-</div>
+<div id="rsvp-error" style="color: red;"></div>

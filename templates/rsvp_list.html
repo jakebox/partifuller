@@ -1,6 +1,46 @@
-<h2>RSVP list:</h2>
-<ul>
-{% for rsvp in rsvps %}
-  <li>{{ rsvp.name }}</li>
-{% endfor %}
-</ul>
+<style>
+  h2 {
+    margin-top: 10px;
+    margin-bottom: 15px;
+    font-weight: 500;
+  }
+
+  h3 {
+    font-weight: 500;
+    margin-top: 0;
+  }
+
+  ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+  }
+</style>
+
+<h2>Guests</h2>
+
+<div style="display: flex; gap: 40px;">
+  <!-- Attending -->
+  <div>
+    <h3>Yes!</h3>
+    <ul>
+    {% for rsvp in rsvps %}
+      {% if rsvp.attending == 1 %}
+        <li>{{ rsvp.name }}</li>
+      {% endif %}
+    {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Not Attending -->
+  <div>
+    <h3>No!</h3>
+    <ul>
+    {% for rsvp in rsvps %}
+      {% if rsvp.attending == 0 %}
+        <li>{{ rsvp.name }}</li>
+      {% endif %}
+    {% endfor %}
+    </ul>
+  </div>
+</div>
