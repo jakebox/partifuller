@@ -118,11 +118,21 @@ async fn get_rsvps(pool: &SqlitePool) -> Result<Vec<Rsvp>, AppError> {
 
 const APP_SCRIPT: &str = include_str!("../static/frames.js");
 
+const FAVICON_BYTES: &[u8] = include_bytes!("../static/favicon.ico");
+
 async fn frames_js_handler() -> impl axum::response::IntoResponse {
     (
         StatusCode::OK,
         [(axum::http::header::CONTENT_TYPE, "text/javascript")],
         APP_SCRIPT,
+    )
+}
+
+async fn favicon_handler() -> impl axum::response::IntoResponse {
+    (
+        StatusCode::OK,
+        [(axum::http::header::CONTENT_TYPE, "image/x-icon")],
+        FAVICON_BYTES,
     )
 }
 
@@ -160,6 +170,7 @@ async fn main() -> Result<(), sqlx::Error> {
         .route("/", get(index))
         .route("/rsvp", post(add_rsvp))
         .route("/static/frames.js", get(frames_js_handler))
+        .route("/static/favicon.ico", get(favicon_handler))
         .with_state(pool);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:4000").await.unwrap();
