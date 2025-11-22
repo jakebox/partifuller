@@ -63,9 +63,7 @@
       }
     </style>
     
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
-    <script src=" https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4/dist/response-targets.min.js "></script>
-    <script src="static/frames.js"></script>
+    <link rel="preload" href="static/frames.js" as="script">
     <link rel="icon" type="image/x-icon" href="static/favicon.ico">
   </head>
   <body hx-ext="response-targets">
@@ -88,13 +86,8 @@
        </footer>
     </main>
   </body>
-  <script>
-    let i = 0;
-    function animate() {
-      document.getElementById("ascii").textContent = frames[i];
-      i = (i + 1) % frames.length;
-    }
-    setInterval(animate, 80);
-    animate();
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" defer></script>
+  <script src=" https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4/dist/response-targets.min.js " defer></script>
+  <script src="static/frames.js"></script>
   </script>
 </html>

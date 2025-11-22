@@ -118,14 +118,16 @@ async fn get_rsvps(pool: &SqlitePool) -> Result<Vec<Rsvp>, AppError> {
 // Include script  //
 /////////////////////
 
-const APP_SCRIPT: &str = include_str!("../static/frames.js");
+const APP_SCRIPT: &[u8] = include_bytes!("../static/frames.js.gz");
 
 const FAVICON_BYTES: &[u8] = include_bytes!("../static/favicon.ico");
 
 async fn frames_js_handler() -> impl axum::response::IntoResponse {
     (
         StatusCode::OK,
-        [(axum::http::header::CONTENT_TYPE, "text/javascript")],
+        [(axum::http::header::CONTENT_TYPE, "text/javascript"),
+        (axum::http::header::CONTENT_ENCODING, "gzip"),
+        (axum::http::header::CACHE_CONTROL, "public, max-age=31536000, immutable")],
         APP_SCRIPT,
     )
 }

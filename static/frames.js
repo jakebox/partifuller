@@ -2043,3 +2043,13 @@ const frames = [`
                                       °°°°°°°°°°°°°°°°°°°°°J°J                                                                                                     
                                          °°°°°°°  °  °°°°°                                                                                                         
 `]
+
+let i = 0;
+
+function animate() {
+  document.getElementById("ascii").textContent = frames[i];
+  i = (i + 1) % frames.length;
+}
+
+animate();
+setInterval(animate, 80);
