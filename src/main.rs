@@ -8,6 +8,8 @@ use axum::{
 };
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use thiserror::Error;
+use tower_http::trace::TraceLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 /////////////
 // Errors //
@@ -158,6 +160,16 @@ async fn add_rsvp(
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                "info,tower_http=debug,tower_http::trace::on_request=error".into()
+            }),
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    tracing::info!("Starting up server...");
 
     let options = SqliteConnectOptions::new()
         .create_if_missing(true)
@@ -171,9 +183,12 @@ async fn main() -> Result<(), sqlx::Error> {
         .route("/rsvp", post(add_rsvp))
         .route("/static/frames.js", get(frames_js_handler))
         .route("/static/favicon.ico", get(favicon_handler))
+        .layer(TraceLayer::new_for_http())
         .with_state(pool);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:4000").await.unwrap();
+    // Log that the server is listening
+    tracing::info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 
     Ok(())
