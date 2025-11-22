@@ -8,6 +8,38 @@ use axum::{
 };
 use sqlx::sqlite::SqlitePool;
 use tower_http::services::ServeDir;
+use thiserror::Error;
+
+/////////////
+// Errors //
+/////////////
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("Database error: {0}")]
+    Database(#[from] sqlx::Error),
+    #[error("Template error: {0}")]
+    Template(#[from] askama::Error),
+    #[error("Invalid attending value")]
+    InvalidAttending,
+    #[error("Name and email must be unique")]
+    DuplicateRsvp,
+}
+
+impl AppError {
+    pub fn status_code(&self) -> StatusCode {
+        match self {
+            AppError::InvalidAttending | AppError::DuplicateRsvp => StatusCode::BAD_REQUEST,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
+impl axum::response::IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        (self.status_code(), self.to_string()).into_response()
+    }
+}
 
 ////////////////////
 // HTML templates //
@@ -45,19 +77,14 @@ struct RsvpNew {
     attending: String,
 }
 
-async fn db_add_rsvp(pool: &SqlitePool, rsvp: RsvpNew) -> Result<(), (StatusCode, String)> {
+async fn db_add_rsvp(pool: &SqlitePool, rsvp: RsvpNew) -> Result<(), AppError> {
     let attending = match rsvp.attending.as_str() {
         "yes" => 1,
         "no" => 0,
-        _ => {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "Invalid attending code".to_string(),
-            ));
-        }
+        _ => return Err(AppError::InvalidAttending),
     };
 
-    let _result = sqlx::query_as!(
+    sqlx::query_as!(
         Rsvp,
         "INSERT INTO rsvps (name, email, attending) VALUES (?, ?, ?) RETURNING *",
         rsvp.name,
@@ -65,27 +92,19 @@ async fn db_add_rsvp(pool: &SqlitePool, rsvp: RsvpNew) -> Result<(), (StatusCode
         attending
     )
     .fetch_one(pool)
-    .await
-    .map_err(|_| {
-        (
-            StatusCode::BAD_REQUEST,
-            "Your name and email must be unique!".to_string(),
-        )
+    .await?
+    .map_err(|e| match e {
+        sqlx::Error::Database(_) => AppError::DuplicateRsvp,
+        _ => AppError::Database(e),
     })?;
 
     Ok(())
 }
 
-async fn get_rsvps(pool: &SqlitePool) -> Result<Vec<Rsvp>, (StatusCode, String)> {
+async fn get_rsvps(pool: &SqlitePool) -> Result<Vec<Rsvp>, AppError> {
     let rsvps = sqlx::query_as!(Rsvp, "SELECT * from rsvps")
         .fetch_all(pool)
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to load RSVPs: {e}"),
-            )
-        })?;
+        .await?;
 
     Ok(rsvps)
 }
@@ -94,34 +113,19 @@ async fn get_rsvps(pool: &SqlitePool) -> Result<Vec<Rsvp>, (StatusCode, String)>
 // Routes //
 ////////////
 
-async fn index(State(pool): State<SqlitePool>) -> Result<Html<String>, StatusCode> {
-    let rsvps = sqlx::query_as("SELECT * from rsvps")
-        .fetch_all(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let page = IndexPage { rsvps }
-        .render()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
+async fn index(State(pool): State<SqlitePool>) -> Result<Html<String>, AppError> {
+    let rsvps = get_rsvps(&pool).await?;
+    let page = IndexPage { rsvps }.render()?;
     Ok(Html(page))
 }
 
 async fn add_rsvp(
     State(pool): State<SqlitePool>,
     Form(rsvp): Form<RsvpNew>,
-) -> Result<Html<String>, (StatusCode, String)> {
+) -> Result<Html<String>, AppError> {
     db_add_rsvp(&pool, rsvp).await?;
-
     let rsvps = get_rsvps(&pool).await?;
-
-    let rsvp_html = RsvpList { rsvps }.render().map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to load RSVPs: {e}"),
-        )
-    })?;
-
+    let rsvp_html = RsvpList { rsvps }.render()?;
     Ok(Html(rsvp_html))
 }
 
@@ -137,8 +141,6 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
-
-    println!("FAIL");
 
     Ok(())
 }

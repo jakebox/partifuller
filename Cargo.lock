@@ -936,6 +936,7 @@ dependencies = [
  "axum",
  "serde",
  "sqlx",
+ "thiserror",
  "tokio",
  "tower-http",
 ]
